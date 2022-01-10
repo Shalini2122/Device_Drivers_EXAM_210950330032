@@ -1,161 +1,172 @@
-//character driver containing ioctl functions//
-//ioctl program to read and write data from kernel to user and uset to kernel
+/*IOCTL UART EXAMPLE*/
 #include <linux/init.h>
-#include <linux/types.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/string.h>
-#include <linux/fs.h>
-#include <linux/cdev.h>
-#include <linux/device.h>
-#include <linux/uaccess.h>
-#include <linux/slab.h>
 #include <linux/kdev_t.h>
+#include <linux/types.h> 
+#include <linux/fs.h> 
+#include <linux/cdev.h>
 #include <linux/ioctl.h>
+#include <linux/uaccess.h>
+#include "ioctl.h"
+#define Name IOCTL
 
-#define mem_size 1024
-
-//Define the ioctl code
-#define WR_DATA _IOW('a','a',int32_t*)
-#define RD_DATA _IOR('a','b',int32_t*)
-struct stats
-{
-int size;
-int r_w;
-char buff[];
-}q;
-
-int32_t val = 0;
-char buf;
-
-dev_t dev = 0;
-static struct class *dev_class;
-static struct cdev etx_cdev;
-uint8_t *kernel_buffer;
-
-static int __init chr_driver_init(void);
-static void __exit chr_driver_exit(void);
 MODULE_LICENSE("GPL");
+MODULE_AUTHOR("shubham");
 
-static int my_open(struct inode *inode,struct file *file);
-static int my_release(struct inode *inode,struct file *file);
-static ssize_t my_read(struct file *filp,char __user *buf,size_t len,loff_t *off);
-static ssize_t my_write(struct file *filp,const char __user *buf,size_t len,loff_t *off);
-static long chr_ioctl(struct file *file,unsigned int cmd,unsigned long arg);
+int Name_open(struct inode *inode,struct file *filp);
+int Name_release(struct inode *inode,struct file *filp);
+ssize_t Name_write(struct file *filp,const char __user *Ubuff, size_t count, loff_t *offp);
+ssize_t Name_read(struct file *filp,char __user *Ubuff, size_t count, loff_t *offp);
+long Name_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 
-static struct file_operations fops =
+struct file_operations fops=
 {
-        .owner = THIS_MODULE,
-        .read = my_read,
-        .write = my_write,
-        .open = my_open,
-        .unlocked_ioctl = chr_ioctl,
-        .release = my_release,
+ .owner  	  = THIS_MODULE,
+ .open   	  = Name_open,
+ .read   	  = Name_read,
+ .write   	  = Name_write,
+ .unlocked_ioctl  = Name_ioctl, //ioctl structure
+ .release	  = Name_release,
+ };
+ 
+ struct cdev *my_cdev;
+ struct Default_Data{
+	int Baudrate;
+	int StopBits;
+	int Parity;
 };
 
-static int my_open(struct inode *inode,struct file *file)
+ dev_t Mydev=0;
+ 
+ static int __init chardevice_init(void)
 {
-        //creating physical memory
-        if((kernel_buffer = kmalloc(mem_size,GFP_KERNEL)) ==0)
-        {
-                printk(KERN_INFO "cannot allocate the memory to the kernel ..\n");
-                return -1;
-        }
-        printk(KERN_INFO "Device file opened...\n");
-        return 0;
-}
-static int my_release(struct inode *inode,struct file *file)
 
+ int result;
+ int MAJOR,MINOR;
+ result=alloc_chrdev_region(&Mydev,0,1,"IOCTL");
+ MAJOR=MAJOR(Mydev);
+ MINOR=MINOR(Mydev);
+ printk(KERN_INFO "\nit is init function\n");
+ printk(KERN_ALERT "\nit is Major no.= %d and Minor no.=%d\n",MAJOR,MINOR);
+ if(result<0)
+ {
+ printk(KERN_ALERT "\n region is not obtain \n");
+ return(-1);
+ }
+ my_cdev = cdev_alloc();
+ my_cdev ->ops = &fops;
+  
+ result= cdev_add(my_cdev,Mydev,1);
+ if(result<0)
+ {
+ printk(KERN_ALERT "\n a char  driver as not been created \n");
+ unregister_chrdev_region(Mydev,1);
+ }
+ return 0;
+ }
+ 
+ 
+ void __exit chardevice_exit(void)
 {
-        kfree(kernel_buffer);
-        printk(KERN_INFO "Device file is closed..\n");
-        return 0;
+int MAJOR,MINOR;
+MAJOR=MAJOR(Mydev);
+MINOR=MINOR(Mydev);
+printk(KERN_ALERT "a Major no.= %d and Minor no.=%d",MAJOR,MINOR);
+unregister_chrdev_region(Mydev,1);
+cdev_del(my_cdev);
+printk(KERN_ALERT "\n Deallocated stuff GOODBYE!! \n");
 }
-
-static ssize_t my_read(struct file *filp,char __user *buf,size_t len,loff_t *off)
+//open fuction
+int Name_open(struct inode *inode,struct file *filp)
 {
-        copy_to_user(buf,kernel_buffer,mem_size);
-        printk(KERN_INFO "Data read : DONE....\n");
-        return mem_size;
-}
-
-static ssize_t my_write(struct file *filp,const char __user *buf,size_t len,loff_t *off)
-{
-        copy_from_user(kernel_buffer,buf,len);
-        printk(KERN_INFO "Data is written successfully ...\n");
-        return len;
-}
-
-static long chr_ioctl(struct file *file,unsigned int cmd,unsigned long arg)
-{
-        switch(cmd)
-        {
-	//write data
-        case WR_DATA:
-                copy_from_user(&val,(int32_t*)arg,sizeof(val));
-                printk(KERN_INFO "val = %d\n",val);
-                break;
-        case RD_DATA:
-                copy_to_user((int32_t*)arg,&val,sizeof(val));
-                break;
-        }
-        return 0;
+printk(KERN_ALERT "\nThis is kernel open call\n");
+return 0;
 }
 
-static int __init chr_driver_init(void)
+//write function
+ssize_t Name_write(struct file *filp,const char __user *Ubuff, size_t count, loff_t *offp)
 {
-        //allocating minor number
-
-        if((alloc_chrdev_region(&dev,0,1,"chr_device"))<0)
-        {
-                printk(KERN_ALERT "Cannot create the major number..\n");
-                return -1;
-        }
-        printk(KERN_INFO "Major number = %d minor number = %d",MAJOR(dev),MINOR(dev));
-        //creating cdev structure
-        cdev_init(&etx_cdev,&fops);
-        //adding the cdev structure
-        if((cdev_add(&etx_cdev,dev,1))<0)
-        {
-                printk(KERN_INFO "Cannot add the device to the system ..\n");
-                goto r_class;
-        }
-        //creating struct class
-        if((dev_class = class_create(THIS_MODULE,"my_class")) == NULL)
-        {
-                printk(KERN_INFO "Cannot create the struct class....\n");
-                goto r_class;
-        }
-        //creating device
-        if((device_create(dev_class,NULL,dev,NULL,"chr_device")) == NULL)
-        {
-                printk(KERN_INFO "Cannot create the device..\n");
-                printk(KERN_INFO "Cannot create the device..\n");
-                goto r_device;
-        }
-        printk(KERN_INFO "Device driver inserted ....done..\n");
-        return 0;
-
-r_device:
-	//destroy the class
-        class_destroy(dev_class);
-
-r_class:
-	//unregister the device
-        unregister_chrdev_region(dev,1);
-        return -1;
-
-
+ char kbuff[100];
+ unsigned long result;
+ ssize_t retvalue;
+ result=copy_from_user((char *)kbuff,(char *)Ubuff,count);
+ if(result==0)
+ {
+ printk(KERN_ALERT "\nmessage from user to kernel:\n %s \n",kbuff);
+ retvalue=count;
+ return retvalue;
+ }
+ else 
+ {
+ printk(KERN_ALERT "\n CANNOT OPEN FILE IN KERNEL\n");
+ retvalue =-EFAULT;
+ return retvalue;
+ }
+ }
+ 
+ //read function
+ssize_t Name_read(struct file *filp,char __user *Ubuff, size_t count, loff_t *offp)
+{
+char kbuff[]="Read from kernel to User\n";
+unsigned long result;
+ssize_t retvalue;
+result=copy_to_user((char *)Ubuff,(char*)kbuff,sizeof(kbuff));
+if(result==0)
+ {
+ printk(KERN_ALERT "\n Data Read Success\n");
+ retvalue =count;
+ return retvalue;
+ }
+ else 
+ {
+ printk(KERN_ALERT "\n CANNOT OPEN FILE IN KERNEL\n");
+ retvalue =-EFAULT;
+ return retvalue;
+ }
 }
-//cleanup function
-void __exit chr_driver_exit(void)
+ 
+
+//release function
+int Name_release(struct inode *inode,struct file *filp)
 {
-        device_destroy(dev_class,dev);
-        class_destroy(dev_class);
-        cdev_del(&etx_cdev);
-        unregister_chrdev_region(dev,1);
-        printk(KERN_INFO "device driver is removed successfully\n");
+printk(KERN_ALERT "\nThis is kernel release call\n");
+return 0;
 }
 
-module_init(chr_driver_init);
-module_exit(chr_driver_exit);
+//ioctl function
+long Name_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+unsigned int value, STOP_BITS;
+char Ubuff[20];
+struct Default_Data *ToSend;
+printk(KERN_INFO "\n IOCTL FUNCTION" );
+switch(cmd) {
+ 	case SET_BAUDRATE:
+		get_user (value,(int __user *)arg);
+		printk("\n BAUDRATE SET = %d",value);
+		value=10;
+		put_user(value,(int __user *)arg);
+		break;
+	case SET_DIRECTION_WRITE:
+		printk("\n The direction is set to be write\n");
+		break;
+	case SET_NON_STOP_BITS:
+		get_user(STOP_BITS,(int __user *)arg);
+		printk("\n STOP_BITS = %d",STOP_BITS);
+		break;
+
+	case DEFAULT_DATA:
+		ToSend =(struct Default_Data *)Ubuff;
+		copy_from_user (Ubuff ,(struct Default_Data *)arg,sizeof(struct Default_Data));
+		printk("\n Default Data = %d , %d , %d",ToSend->Baudrate,ToSend->StopBits,ToSend->Parity);
+		break;
+	default :
+		printk("\n Command not found");
+		return (-EINVAL);
+}
+
+return 0;
+}
+module_init(chardevice_init);
+module_exit(chardevice_exit);

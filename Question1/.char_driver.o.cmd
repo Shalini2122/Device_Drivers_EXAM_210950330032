@@ -581,6 +581,8 @@ deps_/home/pi/Device_Drivers_exam/Question1/char_driver.o := \
     $(wildcard include/config/have/mod/arch/specific.h) \
     $(wildcard include/config/modules/use/elf/rel.h) \
     $(wildcard include/config/modules/use/elf/rela.h) \
+  include/linux/kdev_t.h \
+  include/uapi/linux/kdev_t.h \
   include/linux/fs.h \
     $(wildcard include/config/read/only/thp/for/fs.h) \
     $(wildcard include/config/fs/posix/acl.h) \
@@ -600,8 +602,6 @@ deps_/home/pi/Device_Drivers_exam/Question1/char_driver.o := \
     $(wildcard include/config/block.h) \
     $(wildcard include/config/migration.h) \
   include/linux/wait_bit.h \
-  include/linux/kdev_t.h \
-  include/uapi/linux/kdev_t.h \
   include/linux/dcache.h \
   include/linux/rculist.h \
     $(wildcard include/config/prove/rcu/list.h) \
@@ -844,18 +844,7 @@ deps_/home/pi/Device_Drivers_exam/Question1/char_driver.o := \
     $(wildcard include/config/arm/dma/use/iommu.h) \
     $(wildcard include/config/arch/omap.h) \
   include/linux/pm_wakeup.h \
-  include/linux/slab.h \
-    $(wildcard include/config/debug/slab.h) \
-    $(wildcard include/config/failslab.h) \
-    $(wildcard include/config/have/hardened/usercopy/allocator.h) \
-    $(wildcard include/config/slab.h) \
-    $(wildcard include/config/slub.h) \
-    $(wildcard include/config/slob.h) \
-  include/linux/percpu-refcount.h \
-  include/linux/kasan.h \
-    $(wildcard include/config/kasan/vmalloc.h) \
-    $(wildcard include/config/kasan/generic.h) \
-    $(wildcard include/config/kasan/inline.h) \
+  /home/pi/Device_Drivers_exam/Question1/ioctl.h \
 
 /home/pi/Device_Drivers_exam/Question1/char_driver.o: $(deps_/home/pi/Device_Drivers_exam/Question1/char_driver.o)
 
