@@ -1,4 +1,3 @@
-/*IOCTL UART EXAMPLE*/
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -12,7 +11,7 @@
 #define Name IOCTL
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("shubham");
+
 
 int Name_open(struct inode *inode,struct file *filp);
 int Name_release(struct inode *inode,struct file *filp);
