@@ -1,1 +1,1 @@
-cmd_/home/pi/Device_Drivers_exam/Question1/modules.order := {   echo /home/pi/Device_Drivers_exam/Question1/char_driver.ko; :; } | awk '!x[$$0]++' - > /home/pi/Device_Drivers_exam/Question1/modules.order
+cmd_/home/pi/Device_Drivers_exam/Question1/modules.order := {   echo /home/pi/Device_Drivers_exam/Question1/chr_driver.ko; :; } | awk '!x[$$0]++' - > /home/pi/Device_Drivers_exam/Question1/modules.order
